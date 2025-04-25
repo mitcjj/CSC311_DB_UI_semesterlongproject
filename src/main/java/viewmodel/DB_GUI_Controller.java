@@ -30,11 +30,17 @@ import java.util.ResourceBundle;
 public class DB_GUI_Controller implements Initializable {
 
     @FXML
-    TextField first_name, last_name, department, major, email, imageURL;
+    TextField first_name, last_name, department, email, imageURL;
     @FXML
     ImageView img_view;
     @FXML
     MenuBar menuBar;
+    @FXML
+    MenuItem newItem, changePic, editItem, deleteItem, clearItem, copyItem;
+    @FXML
+    Button addBtn, editBtn, deleteBtn;
+    @FXML
+    ComboBox<Major> major;
     @FXML
     private TableView<Person> tv;
     @FXML
@@ -54,6 +60,7 @@ public class DB_GUI_Controller implements Initializable {
             tv_major.setCellValueFactory(new PropertyValueFactory<>("major"));
             tv_email.setCellValueFactory(new PropertyValueFactory<>("email"));
             tv.setItems(data);
+            major.getItems().addAll(Major.BUS,Major.CPIS,Major.CRJ,Major.CSC);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -61,15 +68,19 @@ public class DB_GUI_Controller implements Initializable {
 
     @FXML
     protected void addNewRecord() {
-
-            Person p = new Person(first_name.getText(), last_name.getText(), department.getText(),
-                    major.getText(), email.getText(), imageURL.getText());
+        Person p = new Person(first_name.getText(), last_name.getText(), department.getText(),
+                major.getValue().toString(), email.getText(), imageURL.getText());
+        if(data.indexOf(p) == -1) {
             cnUtil.insertUser(p);
             cnUtil.retrieveId(p);
             p.setId(cnUtil.retrieveId(p));
             data.add(p);
             clearForm();
-
+        } else {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setContentText("This record already exists");
+            alert.showAndWait();
+        }
     }
 
     @FXML
@@ -77,7 +88,7 @@ public class DB_GUI_Controller implements Initializable {
         first_name.setText("");
         last_name.setText("");
         department.setText("");
-        major.setText("");
+        major.setPromptText("Major");
         email.setText("");
         imageURL.setText("");
     }
@@ -119,7 +130,7 @@ public class DB_GUI_Controller implements Initializable {
         Person p = tv.getSelectionModel().getSelectedItem();
         int index = data.indexOf(p);
         Person p2 = new Person(index + 1, first_name.getText(), last_name.getText(), department.getText(),
-                major.getText(), email.getText(),  imageURL.getText());
+                major.getValue().toString(), email.getText(),  imageURL.getText());
         cnUtil.editUser(p.getId(), p2);
         data.remove(p);
         data.add(index, p2);
@@ -154,9 +165,32 @@ public class DB_GUI_Controller implements Initializable {
         first_name.setText(p.getFirstName());
         last_name.setText(p.getLastName());
         department.setText(p.getDepartment());
-        major.setText(p.getMajor());
+        major.setPromptText(p.getMajor());
         email.setText(p.getEmail());
         imageURL.setText(p.getImageURL());
+        enableModifyingButtons(p);
+    }
+
+    @FXML
+    private void enableAddButton(){
+        if(first_name.getText().isEmpty()||last_name.getText().isEmpty()||department.getText().isEmpty()
+                ||major.getValue().toString().equals("Major")||email.getText().isEmpty()){
+            addBtn.setDisable(true);
+            newItem.setDisable(true);
+        } else {
+            addBtn.setDisable(false);
+            newItem.setDisable(false);
+        }
+    }
+
+    private void enableModifyingButtons(Person p){
+        if(data.indexOf(p) >= 0){
+            editBtn.setDisable(false);
+            deleteBtn.setDisable(false);
+        } else {
+            editBtn.setDisable(true);
+            deleteBtn.setDisable(true);
+        }
     }
 
     public void lightTheme(ActionEvent actionEvent) {
@@ -214,7 +248,7 @@ public class DB_GUI_Controller implements Initializable {
         });
     }
 
-    private static enum Major {Business, CSC, CPIS}
+    private static enum Major {BUS, CSC, CPIS, CRJ}
 
     private static class Results {
 
